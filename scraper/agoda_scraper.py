@@ -98,11 +98,6 @@ while current_date <= end_date:
     current_date += timedelta(days=1)
 
 
-
-print("Length of each list in hotel_data:")
-for key in hotel_data:
-    print(f"{key}: {len(hotel_data[key])}")
-
 # Create DataFrame from hotel_data dictionary
 df = pd.DataFrame(hotel_data)
 
