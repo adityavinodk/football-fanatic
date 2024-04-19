@@ -1,3 +1,6 @@
 *.DS_Store
 scraper/data/*
 preprocessing/*/submissions/*
+
+venv/
+__pycache__/
