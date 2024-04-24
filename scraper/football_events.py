@@ -52,28 +52,59 @@ def fetchEventData(city):
                     "city": city,
                     "country": country,
                 }
-
                 soup2 = BeautifulSoup(fetchHTML(tickets_link), "html.parser")
-                ticket_comps = soup2.find("ol", id="ticket-ui").children
+                ticket_elements = soup2.find_all(
+                    "li", class_="ticket-row", recursive=True
+                )
+                no_tickets = len(ticket_elements)
                 tickets = []
-                for ticket in ticket_comps:
-                    if not isinstance(ticket, str):
-                        category = ticket.find("h5", class_="ticket-heading").text
-                        price = (
-                            ticket.find("div", class_="ticket-price").find("h4").text
-                        )
-                        ticket_info = ticket.find(
-                            "span", class_="ticket-info-details"
-                        ).text.strip()
-                        tickets.append(
-                            {"category": category, "price": price, "info": ticket_info}
-                        )
-                data["tickets"] = tickets
-                events.append(data)
+                if no_tickets > 0:
+                    for i in range(no_tickets):
+                        ticket_element = ticket_elements[i]
+                        div_under_ticket = ticket_element.find("div")
+                        if div_under_ticket.find("div"):
+                            category_div = div_under_ticket.find("div")
+                            category_info = category_div.find(
+                                "div", class_="font-bold", recursive=True
+                            )
+                            price_div = category_div.find_next_sibling("div")
+                            category = category_info.find("div")
+                            ticket_info = category.find_next_sibling("div")
+                            price = price_div.find(
+                                "div", class_="font-bold", recursive=True
+                            ).text
+                            tickets.append(
+                                {
+                                    "category": category.text,
+                                    "price": price,
+                                    "info": ticket_info.text,
+                                }
+                            )
+                        else:
+                            category = div_under_ticket.find("h5")
+                            ticket_info = div_under_ticket.find("span")
+                            price = (
+                                ticket_element.find(
+                                    "div", class_="ticket-price", recursive=True
+                                )
+                                .find("h4")
+                                .text
+                            )
+                            tickets.append(
+                                {
+                                    "category": category.text,
+                                    "price": price,
+                                    "info": ticket_info.text,
+                                }
+                            )
+                    data["tickets"] = tickets
+                    events.append(data)
     return events
+
 
 def fetchEventDataParallel(city):
     return fetchEventData(city)
+
 
 if __name__ == "__main__":
     cities = [
@@ -108,8 +139,10 @@ if __name__ == "__main__":
 
     events = []
     with Pool(cpu_count()) as pool:
-        events = list(tqdm(pool.imap(fetchEventDataParallel, cities), total=len(cities)))
-    events = [event for sublist in events for event in sublist]
+        events = list(
+            tqdm(pool.imap(fetchEventDataParallel, cities), total=len(cities))
+        )
+        events = [event for sublist in events for event in sublist]
 
     with open(f"data/{current_date_est}.json", "w") as json_file:
         json.dump(events, json_file)
