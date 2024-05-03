@@ -4,3 +4,5 @@ preprocessing/*/submissions/*
 
 venv/
 __pycache__/
+.vscode
+.metals
